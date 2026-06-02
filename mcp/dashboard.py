@@ -65,6 +65,11 @@ async def call_tool(env_name: str, tool: str, args: dict) -> dict:
 
 app = FastAPI()
 
+IGNORE_KEYS = {
+    "generationtime_ms", "timestamp", "request_id", "x-request-id",
+    "elapsed", "duration_ms", "server_time", "utc_offset_seconds"
+}
+
 def deep_diff(a, b, path=""):
     """Return list of diff strings between two objects."""
     diffs = []
@@ -72,6 +77,8 @@ def deep_diff(a, b, path=""):
         diffs.append(f"{path}: {type(a).__name__} → {type(b).__name__}")
     elif isinstance(a, dict):
         for k in set(list(a.keys()) + list(b.keys())):
+            if k in IGNORE_KEYS:
+                continue
             if k not in a:
                 diffs.append(f"{path}.{k}: mangler i A")
             elif k not in b:
