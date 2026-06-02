@@ -46,37 +46,30 @@ async def get_token() -> str:
 app = FastAPI()
 
 
-@app.get("/sse")
-async def sse_proxy(request: Request):
+@app.post("/")
+async def mcp_proxy(request: Request):
     token = await get_token()
+    body = await request.body()
+    accept = request.headers.get("accept", "application/json, text/event-stream")
 
     async def stream():
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream(
-                "GET", f"{TARGET_BASE}/sse",
-                headers={"Authorization": f"Bearer {token}",
-                         "Accept": "text/event-stream"}
+                "POST", f"{TARGET_BASE}/",
+                content=body,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": request.headers.get("content-type", "application/json"),
+                    "Accept": "application/json, text/event-stream"
+                }
             ) as resp:
                 async for chunk in resp.aiter_bytes():
                     yield chunk
 
-    return StreamingResponse(stream(), media_type="text/event-stream",
+    return StreamingResponse(stream(),
+                             media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache",
                                       "X-Accel-Buffering": "no"})
-
-
-@app.post("/{path:path}")
-async def post_proxy(path: str, request: Request):
-    token = await get_token()
-    body = await request.body()
-    async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(
-            f"{TARGET_BASE}/{path}", content=body,
-            headers={"Authorization": f"Bearer {token}",
-                     "Content-Type": request.headers.get("content-type", "application/json")}
-        )
-    return Response(content=r.content, status_code=r.status_code,
-                    media_type=r.headers.get("content-type"))
 
 
 if __name__ == "__main__":
