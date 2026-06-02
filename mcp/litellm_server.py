@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 import litellm
+import httpx
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -56,6 +57,30 @@ OpenRouter     : openrouter/openai/gpt-4o | openrouter/google/gemini-2.0-flash
 
 Add API keys to: C:\\Users\\MBOL\\.claude\\mcp\\.env
 """
+
+
+RC_BASE = "https://restcountries.com/v3.1"
+
+
+@mcp.tool()
+def get_country_info(country_name: str) -> str:
+    """Get detailed information about a country — capital, population, currency, languages and more."""
+    r = httpx.get(f"{RC_BASE}/name/{country_name}?fullText=false", timeout=10)
+    return r.text
+
+
+@mcp.tool()
+def get_countries_by_region(region: str) -> str:
+    """List all countries in a region (Africa, Americas, Asia, Europe, Oceania) with capital, population and currency."""
+    r = httpx.get(f"{RC_BASE}/region/{region}?fields=name,capital,population,currencies", timeout=10)
+    return r.text
+
+
+@mcp.tool()
+def get_countries_by_currency(currency: str) -> str:
+    """Find all countries that use a specific currency, e.g. EUR, USD, DKK."""
+    r = httpx.get(f"{RC_BASE}/currency/{currency}?fields=name,capital,population", timeout=10)
+    return r.text
 
 
 if __name__ == "__main__":
