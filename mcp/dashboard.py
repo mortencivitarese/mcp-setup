@@ -18,11 +18,15 @@ _tokens: dict = {}
 async def get_token(client_id: str, secret: str) -> str:
     if client_id in _tokens and datetime.now() < _tokens[client_id]["exp"]:
         return _tokens[client_id]["tok"]
+    if not secret:
+        raise ValueError("Ingen secret konfigureret for denne MCP")
     async with httpx.AsyncClient() as c:
         r = await c.post(f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token",
             data={"grant_type":"client_credentials","client_id":client_id,
                   "client_secret":secret,"scope":f"api://{client_id}/.default"})
         d = r.json()
+    if "access_token" not in d:
+        raise ValueError(f"Token fejl: {d.get('error_description','ukendt')[:80]}")
     _tokens[client_id] = {"tok": d["access_token"], "exp": datetime.now() + timedelta(seconds=d["expires_in"]-60)}
     return _tokens[client_id]["tok"]
 
