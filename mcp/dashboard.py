@@ -65,6 +65,57 @@ async def call_tool(env_name: str, tool: str, args: dict) -> dict:
 
 app = FastAPI()
 
+def deep_diff(a, b, path=""):
+    """Return list of diff strings between two objects."""
+    diffs = []
+    if type(a) != type(b):
+        diffs.append(f"{path}: {type(a).__name__} → {type(b).__name__}")
+    elif isinstance(a, dict):
+        for k in set(list(a.keys()) + list(b.keys())):
+            if k not in a:
+                diffs.append(f"{path}.{k}: mangler i A")
+            elif k not in b:
+                diffs.append(f"{path}.{k}: mangler i B")
+            else:
+                diffs.extend(deep_diff(a[k], b[k], f"{path}.{k}"))
+    elif isinstance(a, list):
+        for i, (x, y) in enumerate(zip(a, b)):
+            diffs.extend(deep_diff(x, y, f"{path}[{i}]"))
+        if len(a) != len(b):
+            diffs.append(f"{path}: længde {len(a)} → {len(b)}")
+    elif a != b:
+        av = str(a)[:40]
+        bv = str(b)[:40]
+        diffs.append(f"{path}: {av!r} → {bv!r}")
+    return diffs
+
+def compare_results(results: dict) -> dict:
+    parsed = {}
+    for env, r in results.items():
+        if r["ok"]:
+            try:
+                parsed[env] = json.loads(r["text"])
+            except:
+                parsed[env] = r["text"]
+        else:
+            parsed[env] = None
+
+    envs = list(parsed.keys())
+    all_ok = all(v is not None for v in parsed.values())
+    if not all_ok:
+        return {"status": "error", "message": "Et eller flere miljøer fejlede", "diffs": {}}
+
+    diffs = {}
+    pairs = [("local","dev"), ("local","prod"), ("dev","prod")]
+    for a, b in pairs:
+        d = deep_diff(parsed[a], parsed[b])
+        if d:
+            diffs[f"{a}_vs_{b}"] = d[:20]
+
+    if not diffs:
+        return {"status": "identical", "message": "✅ Alle tre miljøer returnerer identiske data", "diffs": {}}
+    return {"status": "differs", "message": f"⚠️ Forskelle fundet", "diffs": diffs}
+
 @app.get("/api/query")
 async def query(tool: str, args: str = "{}"):
     arg_dict = json.loads(args)
@@ -73,7 +124,9 @@ async def query(tool: str, args: str = "{}"):
         call_tool("dev",   tool, arg_dict),
         call_tool("prod",  tool, arg_dict),
     )
-    return JSONResponse({"local": results[0], "dev": results[1], "prod": results[2]})
+    data = {"local": results[0], "dev": results[1], "prod": results[2]}
+    data["compare"] = compare_results(data)
+    return JSONResponse(data)
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
@@ -114,6 +167,16 @@ HTML = """<!DOCTYPE html>
   .timestamp { text-align: right; font-size: 0.75rem; color: #555; padding: 8px 18px 12px; }
   .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #4f8ef7; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .compare-bar { margin: 0 30px 20px; border-radius: 12px; padding: 16px 20px; border: 1px solid #2a2a3a; background: #1a1a2e; }
+  .compare-bar.identical { border-color: #4fc87a44; background: #0d2a1a; }
+  .compare-bar.differs   { border-color: #f7a94f44; background: #2a1a0a; }
+  .compare-bar.error     { border-color: #f74f4f44; background: #2a0a0a; }
+  .compare-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; }
+  .diff-group { margin-top: 10px; }
+  .diff-group h4 { font-size: 0.8rem; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .diff-item { font-size: 0.82rem; font-family: monospace; color: #f7a94f; background: #1e1000; border-radius: 4px; padding: 3px 8px; margin: 2px 0; }
+  .diff-item.old { color: #f74f4f; background: #1e0000; }
+  .diff-item.new { color: #4fc87a; background: #001e0a; }
 </style>
 </head>
 <body>
@@ -140,6 +203,11 @@ HTML = """<!DOCTYPE html>
   <button onclick="query()">▶ Kør</button>
   <button class="auto" id="autoBtn" onclick="toggleAuto()">⏱ Auto-refresh</button>
   <span id="status" style="font-size:0.85rem;color:#888;"></span>
+</div>
+
+<div class="compare-bar" id="compareBar" style="display:none">
+  <div class="compare-title" id="compareTitle"></div>
+  <div id="compareDiffs"></div>
 </div>
 
 <div class="grid">
@@ -237,9 +305,35 @@ async function query() {
     setResult("local", data.local);
     setResult("dev", data.dev);
     setResult("prod", data.prod);
+    showCompare(data.compare);
     document.getElementById("status").textContent = "Opdateret " + new Date().toLocaleTimeString("da-DK");
   } catch(e) {
     document.getElementById("status").textContent = "Fejl: " + e.message;
+  }
+}
+
+function showCompare(cmp) {
+  const bar = document.getElementById("compareBar");
+  const title = document.getElementById("compareTitle");
+  const diffs = document.getElementById("compareDiffs");
+  bar.style.display = "block";
+  bar.className = "compare-bar " + cmp.status;
+  title.textContent = cmp.message;
+  diffs.innerHTML = "";
+  if (cmp.status === "differs") {
+    for (const [pair, items] of Object.entries(cmp.diffs)) {
+      const g = document.createElement("div");
+      g.className = "diff-group";
+      const labels = {"local_vs_dev":"LOCAL vs DEV","local_vs_prod":"LOCAL vs PROD","dev_vs_prod":"DEV vs PROD"};
+      g.innerHTML = `<h4>${labels[pair] || pair}</h4>`;
+      items.forEach(d => {
+        const el = document.createElement("div");
+        el.className = "diff-item";
+        el.textContent = d;
+        g.appendChild(el);
+      });
+      diffs.appendChild(g);
+    }
   }
 }
 
