@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "C:\\Users\\MBOL\\AppData\\Local\\Microsoft\\WinGet\\Packages\\OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe\\node-v24.16.0-win-x64\\node.exe",
+      "args": [
+        "C:\\Users\\MBOL\\AppData\\Local\\Microsoft\\WinGet\\Packages\\OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe\\node-v24.16.0-win-x64\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "C:\\Users\\MBOL"
+      ],
+      "env": {}
+    },
+    "litellm": {
+      "command": "C:\\Users\\MBOL\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "args": [
+        "C:\\Users\\MBOL\\.claude\\mcp\\litellm_server.py"
+      ],
+      "env": {}
+    }
+  }
+}

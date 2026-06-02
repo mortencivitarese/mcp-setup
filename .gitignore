@@ -1,0 +1,5 @@
+# API nøgler må ALDRIG pushes
+.env
+
+# Dive model config indeholder API nøgler
+dive-config/model_config.json

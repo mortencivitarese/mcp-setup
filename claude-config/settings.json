@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit"
+    ]
+  },
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "ERSTAT_MED_DIN_HJEMMEMAPPE"
+      ],
+      "type": "stdio"
+    },
+    "litellm": {
+      "command": "ERSTAT_MED_STI_TIL_PYTHON",
+      "args": [
+        "ERSTAT_MED_STI_TIL/litellm_server.py"
+      ],
+      "type": "stdio"
+    }
+  }
+}
