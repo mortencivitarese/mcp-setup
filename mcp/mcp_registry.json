@@ -1,0 +1,34 @@
+{
+  "mcps": [
+    {
+      "id": "rcmcpatea",
+      "name": "RcMcpAtea",
+      "description": "Public REST APIs — lande, vejr, valuta, Pokemon, bøger, IP geo",
+      "auth_type": "noauth",
+      "datasources": [
+        { "name": "REST Countries", "url": "https://restcountries.com/v3.1" },
+        { "name": "Open-Meteo", "url": "https://api.open-meteo.com" },
+        { "name": "ExchangeRate API", "url": "https://open.er-api.com" },
+        { "name": "PokeAPI", "url": "https://pokeapi.co" },
+        { "name": "Open Library", "url": "https://openlibrary.org" },
+        { "name": "ipwho.is", "url": "https://ipwho.is" }
+      ],
+      "environments": {
+        "local": { "url": "http://localhost:4547", "client_id": "90926159-18cc-4b41-80f6-9cf01a61af38", "secret_env": "RCMCPATEA_CLIENT_SECRET" },
+        "dev":   { "url": "https://rcmcpatea.wonderfulsmoke-7219c7b7.westeurope.azurecontainerapps.io", "client_id": "90926159-18cc-4b41-80f6-9cf01a61af38", "secret_env": "RCMCPATEA_CLIENT_SECRET" },
+        "prod":  { "url": "https://rcmcpatea.kindhill-77d03965.westeurope.azurecontainerapps.io", "client_id": "6c38778d-37bd-45f4-910b-fe9600c3c250", "secret_env": "RCMCPATEA_PROD_CLIENT_SECRET" }
+      }
+    },
+    {
+      "id": "ateastarter",
+      "name": "AteaStarter",
+      "description": "Generisk scaffold — klar til at tilkobles nye datakilder",
+      "auth_type": "noauth",
+      "datasources": [],
+      "environments": {
+        "local": { "url": "http://localhost:4547", "client_id": "90926159-18cc-4b41-80f6-9cf01a61af38", "secret_env": "RCMCPATEA_CLIENT_SECRET" },
+        "dev":   { "url": "https://ateastarter.wonderfulsmoke-7219c7b7.westeurope.azurecontainerapps.io", "client_id": "2a2aa077-5eae-4265-8bcd-dbc3ffb67df6", "secret_env": "RCMCPATEA_CLIENT_SECRET" }
+      }
+    }
+  ]
+}
