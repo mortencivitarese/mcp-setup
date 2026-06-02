@@ -26,8 +26,7 @@
       "auth_type": "noauth",
       "datasources": [],
       "environments": {
-        "local": { "url": "http://localhost:4547", "client_id": "90926159-18cc-4b41-80f6-9cf01a61af38", "secret_env": "RCMCPATEA_CLIENT_SECRET" },
-        "dev":   { "url": "https://ateastarter.wonderfulsmoke-7219c7b7.westeurope.azurecontainerapps.io", "client_id": "2a2aa077-5eae-4265-8bcd-dbc3ffb67df6", "secret_env": "RCMCPATEA_CLIENT_SECRET" }
+        "dev": { "url": "https://ateastarter.wonderfulsmoke-7219c7b7.westeurope.azurecontainerapps.io", "client_id": "2a2aa077-5eae-4265-8bcd-dbc3ffb67df6", "secret_env": "ATEASTARTER_CLIENT_SECRET" }
       }
     }
   ]
